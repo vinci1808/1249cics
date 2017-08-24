@@ -1,0 +1,418 @@
+000100 IDENTIFICATION DIVISION.                                         00010000
+000200 PROGRAM-ID. P13AP09.                                             00020000
+000300 DATA DIVISION.                                                   00030000
+000400 WORKING-STORAGE SECTION.                                         00040000
+000500 01  WS-RESP-CODE      PIC S9(08) COMP VALUE ZERO.                00050000
+000600 01  PARA-TABLE                        VALUE SPACES.              00060000
+000700     03  PARA-NAME     PIC X(22) OCCURS 23 TIMES.                 00070000
+000800 01  PARA-SUB          PIC 9(02) VALUE ZERO.                      00080000
+000900 01  WS-CA.                                                       00090000
+001000     03  WS-PROCESS-FLAG      PIC X(01) VALUE SPACES.             00100000
+001100         88  PROCESS-KEYMAP             VALUE '1'.                00110000
+001200         88  PROCESS-ADD                VALUE '2'.                00120000
+001300         88  PROCESS-UPD-DEL            VALUE '3'.                00130009
+001400         88  PROCESS-DETMAP             VALUE '2', '3'.           00140000
+001500     03  WS-EMP-ID            PIC X(04) VALUE SPACES.             00150000
+001600     COPY P13AS09.                                                00160000
+001700     COPY DFHAID.                                                 00170000
+001800     COPY DFHBMSCA.                                               00180000
+001900     COPY EMPREC2.                                                00190000
+002000 01  WS-DATE-TIME             PIC S9(15) COMP-3 VALUE ZERO.       00200000
+002100*01  WS-DOB.                                                      00210009
+002200*    03  WS-DOB-YY            PIC 9(04) VALUE ZERO.               00220009
+002300*    03  WS-DOB-MM            PIC 9(02) VALUE ZERO.               00230009
+002400*    03  WS-DOB-DD            PIC 9(02) VALUE ZERO.               00240012
+002500 01  WS-VALID-FLAG            PIC X(01) VALUE 'N'.                00250000
+002600     88  VALID-DATA                     VALUE 'Y'.                00260000
+002700 01  WS-MESSAGE              PIC X(30) VALUE                      00270012
+002800      'END OF THE PROGRAM, BYE, BYE!!'.                           00280006
+002900 LINKAGE SECTION.                                                 00290000
+003000 01  DFHCOMMAREA  PIC X(05).                                      00300000
+003100 PROCEDURE DIVISION.                                              00310000
+003200 MAIN-PARA.                                                       00320000
+003300     ADD 1 TO PARA-SUB                                            00330000
+003400     IF PARA-SUB < 24                                             00340000
+003500        MOVE 'MAIN-PARA             ' TO PARA-NAME(PARA-SUB)      00350000
+003600     END-IF                                                       00360000
+003700     IF EIBCALEN = ZERO                                           00370000
+003800        PERFORM FIRST-PARA                                        00380000
+003900     ELSE                                                         00390000
+004000        MOVE DFHCOMMAREA TO WS-CA                                 00400000
+004100        PERFORM NEXT-PARA THRU NEXT-PARA-X                        00410000
+004200     END-IF.                                                      00420000
+004300 END-PARA.                                                        00430000
+004400     ADD 1 TO PARA-SUB                                            00440000
+004500     IF PARA-SUB < 24                                             00450000
+004600        MOVE 'END-PARA              ' TO PARA-NAME(PARA-SUB)      00460000
+004700     END-IF                                                       00470000
+004800     EXEC CICS RETURN                                             00480000
+004900          TRANSID('P13I')                                         00490000
+005000          COMMAREA(WS-CA)                                         00500000
+005100     END-EXEC.                                                    00510000
+005200 FIRST-PARA.                                                      00520000
+005300     ADD 1 TO PARA-SUB                                            00530000
+005400     IF PARA-SUB < 24                                             00540000
+005500        MOVE 'FIRST-PARA            ' TO PARA-NAME(PARA-SUB)      00550000
+005600     END-IF                                                       00560000
+005700     MOVE LOW-VALUES TO KEYMAPO                                   00570000
+005800     PERFORM SEND-FIRST-MAP.                                      00580000
+005900 SEND-FIRST-MAP.                                                  00590000
+006000     ADD 1 TO PARA-SUB                                            00600000
+006100     IF PARA-SUB < 24                                             00610000
+006200        MOVE 'SEND-FIRST-MAP        ' TO PARA-NAME(PARA-SUB)      00620000
+006300     END-IF                                                       00630000
+006400     PERFORM DATE-TIME-PARA.                                      00640000
+006500     PERFORM SEND-KEY-MAP.                                        00650000
+006600     SET PROCESS-KEYMAP TO TRUE.                                  00660000
+006700 SEND-KEY-MAP.                                                    00670000
+006800     ADD 1 TO PARA-SUB                                            00680000
+006900     IF PARA-SUB < 24                                             00690000
+007000        MOVE 'SEND-KEY-PARA         ' TO PARA-NAME(PARA-SUB)      00700000
+007100     END-IF                                                       00710000
+007200     EXEC CICS SEND                                               00720000
+007300         MAP('KEYMAP')                                            00730000
+007400         MAPSET('P13AS09')                                        00740000
+007500         FROM(KEYMAPO)                                            00750000
+007600         ERASE                                                    00760000
+007700     END-EXEC.                                                    00770000
+007800 NEXT-PARA.                                                       00780000
+007900     ADD 1 TO PARA-SUB                                            00790000
+008000     IF PARA-SUB < 24                                             00800000
+008100        MOVE 'NEXT-PARA             ' TO PARA-NAME(PARA-SUB)      00810000
+008200     END-IF                                                       00820000
+008300     EVALUATE TRUE                                                00830000
+008400        WHEN PROCESS-KEYMAP                                       00840000
+008500           PERFORM PROCESS-KEYMAP-PARA                            00850000
+008600        WHEN PROCESS-DETMAP                                       00860000
+008700           PERFORM PROCESS-DETMAP-PARA                            00870000
+008800     END-EVALUATE.                                                00880000
+008900 SEND-PARA.                                                       00890000
+009000     ADD 1 TO PARA-SUB                                            00900000
+009100     IF PARA-SUB < 24                                             00910000
+009200        MOVE 'SEND-PARA             ' TO PARA-NAME(PARA-SUB)      00920000
+009300     END-IF                                                       00930000
+009400     EVALUATE TRUE                                                00940000
+009500        WHEN PROCESS-KEYMAP                                       00950000
+009600           PERFORM SEND-KEY-MAP                                   00960000
+009700        WHEN PROCESS-DETMAP                                       00970000
+009800           PERFORM SEND-DETAIL-MAP                                00980000
+009900     END-EVALUATE.                                                00990000
+010000 NEXT-PARA-X.                                                     01000000
+010100     ADD 1 TO PARA-SUB                                            01010000
+010200     IF PARA-SUB < 24                                             01020000
+010300        MOVE 'NEXT-PARA-X           ' TO PARA-NAME(PARA-SUB)      01030000
+010400     END-IF                                                       01040000
+010500     EXIT.                                                        01050000
+010600 PROCESS-KEYMAP-PARA.                                             01060000
+010700     ADD 1 TO PARA-SUB                                            01070000
+010800     IF PARA-SUB < 24                                             01080000
+010900        MOVE 'PROCESS-KEYMAP-PARA   ' TO PARA-NAME(PARA-SUB)      01090000
+011000     END-IF                                                       01100000
+011100     EVALUATE EIBAID                                              01110000
+011200        WHEN DFHENTER                                             01120000
+011300           PERFORM RECEIVE-PROCESS-KEYMAP                         01130000
+011400        WHEN DFHPF3                                               01140000
+011500*          EXEC CICS XCTL                                         01150000
+011600*             PROGRAM('P13AP03')                                  01160000
+011700*          END-EXEC                                               01170000
+011800           EXEC CICS SEND TEXT                                    01180006
+011900               FROM(WS-MESSAGE)                                   01190006
+012000               ERASE                                              01200006
+012100           END-EXEC                                               01210006
+012200           EXEC CICS RETURN                                       01220006
+012300           END-EXEC                                               01230006
+012400        WHEN DFHPF5                                               01240009
+012500           MOVE ZEROS TO EMPIDI                                   01250010
+012600        WHEN OTHER                                                01260000
+012700        MOVE 'INVALID KEY PRESSED   ' TO MESSAGEO                 01270011
+012800     END-EVALUATE.                                                01280000
+012900 RECEIVE-PROCESS-KEYMAP.                                          01290000
+013000      ADD 1 TO PARA-SUB                                           01300000
+013100      IF PARA-SUB < 24                                            01310000
+013200        MOVE 'RECIEVE-PROCESS-KEYMAP' TO PARA-NAME(PARA-SUB)      01320000
+013300      END-IF                                                      01330000
+013400     PERFORM RECEIVE-KEY-MAP                                      01340000
+013500     IF EMPIDL = ZERO OR EMPIDI = SPACES                          01350001
+013600        MOVE 'PLEASE ENTER AN EMPLOYEE ID' TO MESSAGEO            01360000
+013700     ELSE                                                         01370000
+013800        PERFORM READ-EMPLOYEE                                     01380000
+013900     END-IF.                                                      01390000
+014000 RECEIVE-KEY-MAP.                                                 01400000
+014100      ADD 1 TO PARA-SUB                                           01410000
+014200      IF PARA-SUB < 24                                            01420000
+014300         MOVE 'RECEIVE-KEY-MAP       ' TO PARA-NAME(PARA-SUB)     01430000
+014400      END-IF                                                      01440000
+014500     EXEC CICS RECEIVE                                            01450000
+014600         MAP('KEYMAP')                                            01460000
+014700         MAPSET('P13AS09')                                        01470005
+014800         INTO(KEYMAPI)                                            01480000
+014900     END-EXEC.                                                    01490000
+015000 READ-EMPLOYEE.                                                   01500000
+015100      ADD 1 TO PARA-SUB                                           01510000
+015200      IF PARA-SUB < 24                                            01520000
+015300         MOVE 'READ-EMPLOYEE         ' TO PARA-NAME(PARA-SUB)     01530000
+015400      END-IF                                                      01540000
+015500     MOVE LOW-VALUES TO DETMAPO                                   01550000
+015600     MOVE EMPIDI TO WS-EMP-ID, EMPID2O                            01560001
+015700     EXEC CICS READ                                               01570000
+015800         FILE('P13BFILE')                                         01580007
+015900         RIDFLD(WS-EMP-ID)                                        01590000
+016000         INTO(MASTER-RECORD)                                      01600000
+016100         RESP(WS-RESP-CODE)                                       01610000
+016200     END-EXEC.                                                    01620009
+016300     EVALUATE WS-RESP-CODE                                        01630000
+016400         WHEN DFHRESP(NORMAL)                                     01640000
+016500            MOVE NAME     TO NAMEO                                01650000
+016600            MOVE ADRS     TO ADDRESSO                             01660000
+016700            MOVE DEPT     TO DEPTO                                01670000
+016800*           MOVE CORR DOB TO WS-DOB.                              01680000
+016900            MOVE DOB(5:4) TO DOBYYO                               01690014
+017000            MOVE DOB(3:2) TO DOBMMO                               01700000
+017100            MOVE DOB(1:2) TO DOBDDO                               01710000
+017200            MOVE DOJ(5:4) TO JOINYYO                              01720014
+017300            MOVE DOJ(3:2) TO JOINMMO                              01730000
+017400            MOVE DOJ(1:2) TO JOINDDO                              01740014
+017500            MOVE -1       TO NAMEL                                01750009
+017600            SET PROCESS-UPD-DEL TO TRUE                           01760009
+017700*           MOVE DFHBMDAR TO LABEL1A                              01770000
+017800*           MOVE DFHBMPRO TO LABEL2A                              01780000
+017900         WHEN DFHRESP(NOTFND)                                     01790000
+018000            MOVE -1                TO NAMEL                       01800000
+018100            MOVE SPACES TO NAMEO, ADDRESSO, DEPTO,                01810001
+018200                 DOBYYO, DOBMMO, DOBDDO, JOINDDO,                 01820000
+018300                 JOINMMO, JOINYYO                                 01830000
+018400*           MOVE 'ADD EMPLOYEE'  TO UPDEO                         01840009
+018500            SET PROCESS-ADD TO TRUE                               01850000
+018600*           MOVE DFHBMPRO TO LABEL1A                              01860000
+018700*           MOVE DFHBMDAR TO LABEL2A                              01870000
+018800         WHEN OTHER                                               01880000
+018900            MOVE 'ERROR PROCESSING FILE' TO MESSAGEO              01890000
+019000     END-EVALUATE.                                                01900000
+019100 SEND-DETAIL-MAP.                                                 01910000
+019200      ADD 1 TO PARA-SUB                                           01920000
+019300      IF PARA-SUB < 24                                            01930000
+019400         MOVE 'SEND-DETAIL-MAP       ' TO PARA-NAME(PARA-SUB)     01940000
+019500      END-IF                                                      01950000
+019600*    MOVE LOW-VALUES TO DETMAPO                                   01960013
+019700     PERFORM DATE-TIME-PARA.                                      01970000
+019800     EXEC CICS SEND                                               01980000
+019900         MAP('DETMAP')                                            01990000
+020000         MAPSET('P13AS09')                                        02000006
+020100         FROM(DETMAPO)                                            02010000
+020200         CURSOR                                                   02020000
+020300         ERASE                                                    02030000
+020400     END-EXEC.                                                    02040000
+020500 PROCESS-DETMAP-PARA.                                             02050000
+020600      ADD 1 TO PARA-SUB                                           02060000
+020700      IF PARA-SUB < 24                                            02070000
+020800         MOVE 'PROCESS-DETMAP-PARA   ' TO PARA-NAME(PARA-SUB)     02080000
+020900      END-IF                                                      02090000
+021000     EVALUATE EIBAID                                              02100000
+021100         WHEN DFHPF2                                              02110000
+021200            IF PROCESS-ADD                                        02120000
+021300               PERFORM ADD-PARA                                   02130000
+021400            ELSE                                                  02140000
+021500               MOVE 'PF2 NOT ENABLED' TO MESSAGE2O                02150000
+021600            END-IF                                                02160000
+021700         WHEN DFHPF3                                              02170000
+021800            SET PROCESS-KEYMAP TO TRUE                            02180000
+021900         WHEN DFHPF4                                              02190000
+022000            IF PROCESS-UPD-DEL                                    02200009
+022100               PERFORM UPDATE-PARA                                02210009
+022200            ELSE                                                  02220000
+022300               MOVE 'PF4 NOT ENABLED' TO MESSAGE2O                02230000
+022400            END-IF                                                02240000
+022500         WHEN DFHPF5                                              02250000
+022600            IF PROCESS-UPD-DEL                                    02260009
+022700               PERFORM DELETE-PARA                                02270000
+022800            ELSE                                                  02280000
+022900               MOVE 'PF5 NOT ENABLED' TO MESSAGE2O                02290000
+023000            END-IF                                                02300000
+023100         WHEN OTHER                                               02310000
+023200            MOVE 'INVALID KEY PRESSED' TO MESSAGE2O               02320000
+023300     END-EVALUATE.                                                02330000
+023400 RECEIVE-DETAIL-MAP.                                              02340000
+023500      ADD 1 TO PARA-SUB                                           02350000
+023600      IF PARA-SUB < 24                                            02360000
+023700         MOVE 'RECEIVE-DETAIL-MAP    ' TO PARA-NAME(PARA-SUB)     02370000
+023800      END-IF                                                      02380000
+023900     EXEC CICS RECEIVE                                            02390000
+024000         MAP('DETMAP')                                            02400000
+024100         MAPSET('P13AS09')                                        02410006
+024200         INTO(DETMAPI)                                            02420000
+024300     END-EXEC.                                                    02430000
+024400 DELETE-PARA.                                                     02440000
+024500      ADD 1 TO PARA-SUB                                           02450000
+024600      IF PARA-SUB < 24                                            02460000
+024700         MOVE 'DELETE-PARA           ' TO PARA-NAME(PARA-SUB)     02470000
+024800      END-IF                                                      02480000
+024900     EXEC CICS DELETE                                             02490000
+025000         FILE('P13BFILE')                                         02500007
+025100         RIDFLD(WS-EMP-ID)                                        02510000
+025200         RESP(WS-RESP-CODE)                                       02520000
+025300     END-EXEC                                                     02530000
+025400     EVALUATE WS-RESP-CODE                                        02540000
+025500         WHEN DFHRESP(NORMAL)                                     02550000
+025600            MOVE 'DELETE SUCCESSFUL' TO MESSAGEO                  02560000
+025700         WHEN OTHER                                               02570000
+025800            MOVE 'DELETE NOT SUCCESSFUL' TO MESSAGEO              02580000
+025900     END-EVALUATE                                                 02590000
+026000     SET PROCESS-KEYMAP TO TRUE                                   02600000
+026100     MOVE WS-EMP-ID TO EMPIDO.                                    02610001
+026200 ADD-PARA.                                                        02620000
+026300      ADD 1 TO PARA-SUB                                           02630000
+026400      IF PARA-SUB < 24                                            02640000
+026500         MOVE 'ADD-PARA              ' TO PARA-NAME(PARA-SUB)     02650000
+026600      END-IF                                                      02660000
+026700     PERFORM RECEIVE-DETAIL-MAP                                   02670000
+026800     PERFORM VALIDATE-PARA                                        02680000
+026900     IF VALID-DATA                                                02690000
+027000        PERFORM MOVE-PARA                                         02700000
+027100        PERFORM WRITE-PARA                                        02710000
+027200     END-IF.                                                      02720000
+027300 WRITE-PARA.                                                      02730000
+027400      ADD 1 TO PARA-SUB                                           02740000
+027500      IF PARA-SUB < 24                                            02750000
+027600         MOVE 'WRITE-PARA            ' TO PARA-NAME(PARA-SUB)     02760000
+027700      END-IF                                                      02770000
+027800     EXEC CICS WRITE                                              02780000
+027900         FILE('P13BFILE')                                         02790007
+028000         RIDFLD(WS-EMP-ID)                                        02800000
+028100         FROM (MASTER-RECORD)                                     02810000
+028200         RESP(WS-RESP-CODE)                                       02820000
+028300     END-EXEC                                                     02830000
+028400     EVALUATE WS-RESP-CODE                                        02840000
+028500         WHEN DFHRESP(NORMAL)                                     02850000
+028600            MOVE 'ADD SUCCESSFUL' TO MESSAGEO                     02860000
+028700         WHEN OTHER                                               02870000
+028800            MOVE 'ADD NOT SUCCESSFUL' TO MESSAGEO                 02880000
+028900     END-EVALUATE                                                 02890000
+029000     SET PROCESS-KEYMAP TO TRUE                                   02900000
+029100     MOVE WS-EMP-ID TO EMPIDO.                                    02910001
+029200 UPDATE-PARA.                                                     02920009
+029300      ADD 1 TO PARA-SUB                                           02930000
+029400      IF PARA-SUB < 24                                            02940000
+029500         MOVE 'UPDATE-PARA           ' TO PARA-NAME(PARA-SUB)     02950009
+029600      END-IF                                                      02960000
+029700     PERFORM RECEIVE-DETAIL-MAP                                   02970000
+029800     PERFORM VALIDATE-PARA                                        02980000
+029900     IF VALID-DATA                                                02990000
+030000        PERFORM REWRITE-PARA                                      03000000
+030100     END-IF.                                                      03010000
+030200 REWRITE-PARA.                                                    03020000
+030300      ADD 1 TO PARA-SUB                                           03030000
+030400      IF PARA-SUB < 24                                            03040000
+030500         MOVE 'REWRITE-PARA          ' TO PARA-NAME(PARA-SUB)     03050000
+030600      END-IF                                                      03060000
+030700     EXEC CICS READ                                               03070000
+030800         FILE('P13BFILE')                                         03080007
+030900         RIDFLD(WS-EMP-ID)                                        03090000
+031000         INTO(MASTER-RECORD)                                      03100000
+031100         RESP(WS-RESP-CODE)                                       03110000
+031200         UPDATE                                                   03120009
+031300     END-EXEC                                                     03130000
+031400     EVALUATE WS-RESP-CODE                                        03140000
+031500         WHEN DFHRESP(NORMAL)                                     03150000
+031600            PERFORM MOVE-PARA                                     03160000
+031700            EXEC CICS REWRITE                                     03170000
+031800                FILE('P13BFILE')                                  03180007
+031900                FROM(MASTER-RECORD)                               03190000
+032000                RESP(WS-RESP-CODE)                                03200000
+032100            END-EXEC                                              03210000
+032200            EVALUATE WS-RESP-CODE                                 03220000
+032300              WHEN DFHRESP(NORMAL)                                03230000
+032400                 MOVE 'UPDATE SUCCESSFUL' TO MESSAGEO             03240009
+032500              WHEN OTHER                                          03250000
+032600                 MOVE 'UPDATE NOT SUCCESSFUL' TO MESSAGEO         03260009
+032700            END-EVALUATE                                          03270000
+032800         WHEN OTHER                                               03280000
+032900            MOVE 'ERROR PROCESSING FILE' TO MESSAGEO              03290000
+033000     END-EVALUATE                                                 03300000
+033100     SET PROCESS-KEYMAP TO TRUE                                   03310000
+033200     MOVE WS-EMP-ID TO EMPIDO.                                    03320001
+033300 VALIDATE-PARA.                                                   03330000
+033400      ADD 1 TO PARA-SUB                                           03340000
+033500      IF PARA-SUB < 24                                            03350000
+033600         MOVE 'VALIDATE-PARA         ' TO PARA-NAME(PARA-SUB)     03360000
+033700      END-IF                                                      03370000
+033800***************************                                       03380000
+033900      IF                                                          03390000
+034000       NAMEL = 0 OR                                               03400000
+034100       NAMEI = SPACES OR                                          03410000
+034200       NAMEI IS NUMERIC                                           03420000
+034300       MOVE 'PLEASE ENTER VALID NAME' TO MESSAGE2O                03430000
+034400       MOVE 'N' TO WS-VALID-FLAG                                  03440000
+034500      ELSE                                                        03450000
+034600*      MOVE 'Y' TO WS-VALID-FLAG                                  03460000
+034700        IF                                                        03470000
+034800         ADDRESSL = 0 OR                                          03480002
+034900         ADDRESSI = SPACES                                        03490003
+035000         MOVE 'N' TO WS-VALID-FLAG                                03500000
+035100         MOVE 'ENTER VALID ADDRESS!' TO MESSAGE2O                 03510002
+035200        ELSE                                                      03520000
+035300          IF                                                      03530000
+035400           DEPTL = 0 OR                                           03540002
+035500           DEPTI = SPACES OR                                      03550002
+035600           DEPTI IS NUMERIC                                       03560002
+035700           MOVE 'N' TO WS-VALID-FLAG                              03570000
+035800           MOVE 'ENTER VALID DEPARTMENT!' TO MESSAGE2O            03580002
+035900          ELSE                                                    03590000
+036000           IF                                                     03600000
+036100            DOBDDL = 0 OR                                         03610000
+036200            DOBDDI = SPACES OR                                    03620000
+036300            DOBDDI IS NOT NUMERIC                                 03630000
+036400            MOVE 'N' TO WS-VALID-FLAG                             03640000
+036500            MOVE 'ENTER NUMERIC DATA!' TO MESSAGE2O               03650000
+036600           ELSE                                                   03660000
+036700            IF                                                    03670000
+036800             DOBMML = 0 OR                                        03680000
+036900             DOBMMI = SPACES                                      03690000
+037000             OR DOBMMI IS NOT NUMERIC                             03700000
+037100             MOVE 'N' TO WS-VALID-FLAG                            03710000
+037200             MOVE 'ENTER NUMERIC DATA!' TO MESSAGE2O              03720000
+037300            ELSE                                                  03730000
+037400             IF                                                   03740000
+037500              DOBYYL = 0 OR                                       03750000
+037600              DOBYYI = SPACES OR                                  03760000
+037700              DOBYYI IS NOT                                       03770000
+037800             NUMERIC                                              03780000
+037900              MOVE 'N' TO WS-VALID-FLAG                           03790000
+038000              MOVE 'ENTER NUMERIC DATA!' TO MESSAGE2O             03800000
+038100             ELSE                                                 03810000
+038200                  MOVE 'Y' TO WS-VALID-FLAG                       03820000
+038300             END-IF                                               03830000
+038400            END-IF                                                03840000
+038500           END-IF                                                 03850000
+038600          END-IF                                                  03860000
+038700         END-IF                                                   03870000
+038800        END-IF.                                                   03880000
+038900************************                                          03890000
+039000 MOVE-PARA.                                                       03900000
+039100      ADD 1 TO PARA-SUB                                           03910000
+039200      IF PARA-SUB < 24                                            03920000
+039300         MOVE 'MOVE-PARA             ' TO PARA-NAME(PARA-SUB)     03930000
+039400      END-IF                                                      03940000
+039500     MOVE WS-EMP-ID             TO EMPID                          03950000
+039600     MOVE NAMEI                 TO NAME                           03960000
+039700     MOVE ADDRESSI              TO ADRS                           03970002
+039800     MOVE DEPTI                 TO DEPT                           03980002
+039900     MOVE DOBDDI                TO DOB(1:2)                       03990002
+040000     MOVE DOBMMI                TO DOB(3:2)                       04000002
+040100     MOVE DOBYYI                TO DOB(5:4)                       04010002
+040200     MOVE JOINDDI               TO DOJ(1:2)                       04020002
+040300     MOVE JOINMMI               TO DOJ(3:2)                       04030002
+040400     MOVE JOINYYI               TO DOJ(5:4).                      04040002
+040500 DATE-TIME-PARA.                                                  04050002
+040600      ADD 1 TO PARA-SUB                                           04060002
+040700      IF PARA-SUB < 24                                            04070002
+040800         MOVE 'DATE-TIME-PARA        ' TO PARA-NAME(PARA-SUB)     04080002
+040900      END-IF                                                      04090002
+041000     EXEC CICS ASKTIME                                            04100002
+041100         ABSTIME(WS-DATE-TIME)                                    04110002
+041200     END-EXEC                                                     04120002
+041300     EXEC CICS FORMATTIME                                         04130002
+041400         ABSTIME(WS-DATE-TIME)                                    04140002
+041500         DDMMYYYY(DATEO)                                          04150002
+041600         DATESEP                                                  04160002
+041700     END-EXEC                                                     04170002
+041800     MOVE DATEO TO DATE2O.                                        04180003
