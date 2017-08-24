@@ -1,0 +1,152 @@
+1.
+
+
+   A. SELECT DISTINCT FNAME FROM STUDENT;
+      WHERE FNAME LIKE '_A%';
+   
+   B. SELECT AVG(GPA) FROM STUDENT;
+     
+   C. SELECT S.FNAME, S.LNAME, S.AGE, S.GPA, S.STU_NUM,
+      C.COURSE_NUM, S.COURSE_DESC
+      FROM STUDENT S
+          ,COURSE C
+      WHERE C.COURSE_DESC = 'ME';
+
+   D. ALTER TABLE STUDENT
+      ADD(GRADE VARCHAR(NULL));
+    
+   E. SELECT S.FNAME, S.LNAME, S.AGE, S.GPA, S.STU_NUM,
+      C.COURSE_NUM, S.COURSE_DESC
+      FROM STUDENT S
+           ,COURSE C
+           ,STUDENT_COURSE D
+      WHERE C.COURSE_NUM = D.COURSE_NUM;
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+2. 
+
+
+   A. ERROR IS IN 3RD LINE
+      USING '%ON%' WILL LEAD TO A TABLE SCAN . HENCE USING MORE RESOURCES.
+   
+   B. AFTER WHERE CLAUSE COLUMN NAME SHOULD BE THERE WITH EQUAL TO SIGN 
+       I.E.
+       'WHERE COURSE_NUM = (SELECT MIN(COURSE_NUM) FROM STUDENT_COURSE);'
+   
+   C. THE ERROR IS IT SHOULD BE 'SET COURSE_NUM = 350'
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+3.
+
+
+   QUERY USED:  SELECT D.STU_NUM, D.COURSE_NAME, C.COURSE_NUM 
+                FROM COURSE C 
+                INNER JOIN STUDENT_COURSE D
+                ON C.COURSE_NUM = D.COURSE_NUM
+ 
+
+  
+   APPLICATION PROGRAM:-
+
+IDENTIFICATION DIVISION.                                         
+PROGRAM-ID. PROG3.                                               
+DATA DIVISION.                                                
+WORKING-STORAGE SECTION.                               
+01 WS-TABLE-FLAG    PIC X(01) VALUE 'N'.
+   88 END-OF-ROWS             VALUE 'Y'.                      
+       EXEC SQL                                                  
+           INCLUDE STUREC                                   
+       END-EXEC.  
+*RECORD NAME IF THE STUDENT TABLE    
+       EXEC SQL                                                  
+           INCLUDE STUCOUR                                   
+       END-EXEC.
+*RECORD NAME IF THE COURSE TABLE                                        
+       EXEC SQL                                                 
+           INCLUDE SQLCA                                      
+       END-EXEC.                                                
+PROCEDURE DIVISION.
+MAIN-PARA.                                                
+     DISPLAY 'MAIN PARA'                                     
+     ACCEPT WS-STUDENT-NUM                                    
+     PERFORM STUDENT-PARA UNTIL END-OF-ROWS                           
+     STOP RUN.                                                  
+STUDENT-PARA.
+    DISPLAY 'STUDENT-PARA'
+    EXEC SQL 
+       SELECT D.STU_NUM, D.COURSE_NAME, C.COURSE_NUM 
+       INTO :STU-NAME, :COURSE_NAME, :COURSE_NUM
+       FROM COURSE C 
+       INNER JOIN STUDENT_COURSE D
+       ON C.COURSE_NUM = D.COURSE_NUM                  
+    END-EXEC.
+    EVALUATE SQLCODE
+    WHEN ZERO 
+      PERFORM DISPLAY-PARA                                
+    WHEN 100 
+       MOVE 'Y' TO WS-TABLE-FLAG                            
+       DISPLAY 'NO MORE ROWS FOUND'        
+    WHEN OTHER
+       DISPLAY 'ERROR READING TABLE'
+    END-EVALUATE.
+DISPLAY-PARA.
+    DISPLAY 'DISPLAY PARA'
+    DISPLAY 'STUDENT = ', STUREC, STUCOUR.
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+4.
+IDENTIFICATION DIVISION.                                         
+PROGRAM-ID. PROG4.                                                
+DATA DIVISION.                                                    
+WORKING-STORAGE SECTION.                                          
+ 01  WS-STUDENT-NUM    PIC 9(06) VALUE ZEROS.                     
+       EXEC SQL                                                   
+           INCLUDE STUREC                                   
+       END-EXEC.      
+       EXEC SQL                                                   
+           INCLUDE STUCOUR                                   
+       END-EXEC.                                         
+       EXEC SQL                                                 
+           INCLUDE SQLCA                                      
+       END-EXEC.                                                
+PROCEDURE DIVISION.
+MAIN-PARA.                                                
+     DISPLAY 'MAIN PARA'                                     
+     ACCEPT WS-STUDENT-NUM                                    
+     PERFORM STUDENT-PARA                                     
+     STOP RUN.                                                  
+STUDENT-PARA.
+    DISPLAY 'STUDENT-PARA'
+    EXEC SQL                                             
+       SELECT * FROM STUDENT_COURSE                           
+       WHERE STU_NUM = :WS-STUDENT-NUM                        
+    END-EXEC.
+    EVALUATE SQLCODE
+    WHEN ZERO 
+      PERFORM DELETE-PARA                                
+    WHEN 100                                                         
+       DISPLAY 'STUDENT NUMBER DOES NOT EXIST'                                  
+    WHEN OTHER
+       DISPLAY 'ERROR READING STUDENT COURSE TABLE'
+    END-EVALUATE.
+DELETE-PARA
+    DISPLAY 'DELETE-PARA'
+    EXEC SQL                                    
+       DELETE * FROM STUDENT_COURSE                                               
+       WHERE STU_NUM = :WS-STUDENT-NUM
+    END-EXEC. 
+    DISPLAY 'AS PER THE REQUEST, THE RECORD IS BEEN DELETED ', WS-STUDENT-ID                                                     
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
